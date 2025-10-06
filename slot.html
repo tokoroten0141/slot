@@ -3,162 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スロットゲーム</title>
+    <title>3x3 スロットゲーム</title>
     <style>
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            padding: 20px 0;
+            background-color: #1a1a1a;
+            color: #fff;
             font-family: 'Arial', sans-serif;
         }
-
-        #slot-machine {
-            background-color: #fff;
+        #game-container {
+            background-color: #2c2c2c;
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            padding: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.3);
+            border: 2px solid #ffd700;
             text-align: center;
+            width: 90%;
+            max-width: 450px;
         }
-
         h1 {
-            margin-top: 0;
-            color: #333;
+            color: #ffd700;
+            text-shadow: 0 0 5px #ffd700;
         }
-
-        #reels {
+        #info-panel {
             display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            border: 5px solid #333;
-            background-color: #f8f8f8;
+            justify-content: space-around;
+            background: #111;
             padding: 10px;
-        }
-
-        .reel {
-            width: 80px;
-            height: 100px;
-            margin: 0 10px;
-            border: 2px solid #ddd;
             border-radius: 10px;
-            font-size: 50px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .info-box span {
+            display: block;
+            font-size: 0.7em;
+            color: #aaa;
+        }
+        #slot-machine {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background-color: #000;
+            border: 5px solid #888;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 幅と高さを同じにする */
+            border: 2px solid #444;
+            border-radius: 10px;
+            font-size: clamp(24px, 10vw, 50px); /* 画面サイズに応じてフォントサイズを調整 */
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: #fff;
-            overflow: hidden;
+            color: #000;
         }
-        
-        #spinButton {
-            padding: 15px 30px;
+        #controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        #stop-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .btn {
+            padding: 15px 10px;
             font-size: 18px;
             font-weight: bold;
             color: #fff;
-            background-color: #e63946;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
-
-        #spinButton:hover {
-            background-color: #d62828;
-        }
-        
-        #spinButton:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
+        #spinButton { background-color: #e63946; }
+        .stop-btn { background-color: #457b9d; }
+        .btn:disabled { background-color: #666; cursor: not-allowed; color: #aaa; }
         #result {
-            margin-top: 20px;
-            font-size: 24px;
+            margin-top: 15px;
+            font-size: 20px;
             font-weight: bold;
-            height: 30px; /* メッセージの表示/非表示でレイアウトが崩れないように高さを確保 */
+            height: 50px;
             color: #f77f00;
         }
     </style>
 </head>
 <body>
 
-<div id="slot-machine">
-    <h1>スロットゲーム</h1>
-    <div id="reels">
-        <div class="reel">🍒</div>
-        <div class="reel">🍋</div>
-        <div class="reel">🍉</div>
+<div id="game-container">
+    <h1>GOLD RUSH SLOT</h1>
+    <div id="info-panel">
+        <div class="info-box">
+            <span id="coin-count">10</span>
+            <span>コイン</span>
+        </div>
+        <div class="info-box">
+            <span id="jackpot-amount">100</span>
+            <span>ジャックポット</span>
+        </div>
     </div>
-    <button id="spinButton">スピン！</button>
+
+    <div id="slot-machine">
+        <div class="cell" data-row="0" data-col="0"></div>
+        <div class="cell" data-row="0" data-col="1"></div>
+        <div class="cell" data-row="0" data-col="2"></div>
+        <div class="cell" data-row="1" data-col="0"></div>
+        <div class="cell" data-row="1" data-col="1"></div>
+        <div class="cell" data-row="1" data-col="2">７</div>
+        <div class="cell" data-row="2" data-col="0"></div>
+        <div class="cell" data-row="2" data-col="1"></div>
+        <div class="cell" data-row="2" data-col="2"></div>
+    </div>
+
+    <div id="controls">
+        <button id="spinButton" class="btn">スピン (消費:1)</button>
+        <div id="stop-buttons">
+            <button class="btn stop-btn" data-col="0" disabled>ストップ</button>
+            <button class="btn stop-btn" data-col="1" disabled>ストップ</button>
+            <button class="btn stop-btn" data-col="2" disabled>ストップ</button>
+        </div>
+    </div>
     <p id="result"></p>
 </div>
 
 <script>
-    // 定数と変数の設定
-    const reels = document.querySelectorAll('.reel');
+    // --- DOM要素の取得 ---
+    const cells = document.querySelectorAll('.cell');
     const spinButton = document.getElementById('spinButton');
+    const stopButtons = document.querySelectorAll('.stop-btn');
+    const coinDisplay = document.getElementById('coin-count');
+    const jackpotDisplay = document.getElementById('jackpot-amount');
     const resultDisplay = document.getElementById('result');
 
-    // スロットの絵柄
-    const symbols = ['🍒', '🍋', '🍉', '🔔', '★', '７'];
+    // --- ゲーム設定 ---
+    const symbols = ['', '', '', '', '', '７'];
+    const payouts = {
+        '': 5,
+        '': 10,
+        '': 15,
+        '': 20,
+        '★': 100, // が揃うとジャックポット獲得
+        '７': 777 // ７が揃うと固定で777枚
+    };
 
-    let isSpinning = false;
+    // --- ゲームの状態を管理する変数 ---
+    let coins = 10;
+    let jackpot = 100;
+    let isSpinning = [false, false, false];
+    let spinningIntervals = [null, null, null];
 
-    // スピンボタンがクリックされたときの処理
+    // --- ゲームの初期化 ---
+    function init() {
+        updateDisplays();
+    }
+
+    // --- 表示の更新 ---
+    function updateDisplays() {
+        coinDisplay.textContent = coins;
+        jackpotDisplay.textContent = jackpot;
+    }
+
+    // --- スピンボタンの処理 ---
     spinButton.addEventListener('click', () => {
-        if (isSpinning) return;
+        if (coins <= 0) {
+            resultDisplay.textContent = "コインがありません！";
+            return;
+        }
+        if (isSpinning.some(s => s)) return; // いずれかのリールが回転中なら何もしない
 
-        isSpinning = true;
-        spinButton.disabled = true; // ボタンを無効化
-        resultDisplay.textContent = ''; // 結果をクリア
+        coins--;
+        jackpot += 1; // スピンごとにジャックポットが1増える
+        updateDisplays();
+        resultDisplay.textContent = "";
 
-        // 各リールを個別に回転・停止させる
-        reels.forEach((reel, i) => {
-            const delay = i * 500; // 0秒後、0.5秒後、1秒後に停止
-            setTimeout(() => {
-                spinReel(reel);
-            }, delay);
-        });
-        
-        // 全てのリールが停止した後に結果を判定
-        setTimeout(() => {
-            checkResult();
-            isSpinning = false;
-            spinButton.disabled = false; // ボタンを再度有効化
-        }, 1500); // 全体のスピン時間
+        spinButton.disabled = true;
+        stopButtons.forEach(btn => btn.disabled = false);
+
+        isSpinning = [true, true, true];
+        for (let i = 0; i < 3; i++) {
+            startSpinning(i);
+        }
     });
 
-    // リールを回転させる関数
-    function spinReel(reel) {
-        const interval = setInterval(() => {
-            // ランダムに絵柄を選んで表示
-            reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        }, 100); // 0.1秒ごとに絵柄を切り替える
-
-        // 1秒後に回転を止めて最終的な絵柄を確定
-        setTimeout(() => {
-            clearInterval(interval);
-            reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        }, 1000); // このリールのスピン時間
-    }
-    
-    // 結果を判定する関数
-    function checkResult() {
-        const r1 = reels[0].textContent;
-        const r2 = reels[1].textContent;
-        const r3 = reels[2].textContent;
-
-        if (r1 === r2 && r2 === r3) {
-            if(r1 === '７'){
-                resultDisplay.textContent = 'ジャックポット！';
-            } else {
-                resultDisplay.textContent = '当たり！';
+    // --- ストップボタンの処理 ---
+    stopButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const col = parseInt(button.dataset.col);
+            if (isSpinning[col]) {
+                stopSpinning(col);
+                button.disabled = true;
             }
-        } else {
-            resultDisplay.textContent = 'ざんねん...';
+
+            // 全てのリールが止まったかチェック
+            if (isSpinning.every(s => !s)) {
+                spinButton.disabled = false;
+                setTimeout(checkWin, 500); // 結果表示の前に少し待つ
+            }
+        });
+    });
+
+    // --- リール回転開始 ---
+    function startSpinning(col) {
+        spinningIntervals[col] = setInterval(() => {
+            for (let row = 0; row < 3; row++) {
+                const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                getCell(row, col).textContent = randomSymbol;
+            }
+        }, 100);
+    }
+
+    // --- リール回転停止 ---
+    function stopSpinning(col) {
+        clearInterval(spinningIntervals[col]);
+        isSpinning[col] = false;
+        // 最終的な絵柄を確定
+        for (let row = 0; row < 3; row++) {
+            const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+            getCell(row, col).textContent = randomSymbol;
         }
     }
+
+    // --- 当たり判定 ---
+    function checkWin() {
+        const grid = [
+            [getCell(0, 0).textContent, getCell(0, 1).textContent, getCell(0, 2).textContent],
+            [getCell(1, 0).textContent, getCell(1, 1).textContent, getCell(1, 2).textContent],
+            [getCell(2, 0).textContent, getCell(2, 1).textContent, getCell(2, 2).textContent]
+        ];
+
+        // 判定するライン (横3, 縦3, 斜め2)
+        const paylines = [
+            // 横
+            [grid[0][0], grid[0][1], grid[0][2]],
+            [grid[1][0], grid[1][1], grid[1][2]],
+            [grid[2][0], grid[2][1], grid[2][2]],
+            // 縦
+            [grid[0][0], grid[1][0], grid[2][0]],
+            [grid[0][1], grid[1][1], grid[2][1]],
+            [grid[0][2], grid[1][2], grid[2][2]],
+            // 斜め
+            [grid[0][0], grid[1][1], grid[2][2]],
+            [grid[0][2], grid[1][1], grid[2][0]]
+        ];
+
+        let totalWin = 0;
+        let wonLines = 0;
+
+        for (const line of paylines) {
+            if (line[0] === line[1] && line[1] === line[2]) {
+                const symbol = line[0];
+                if (symbol === '') {
+                    resultDisplay.textContent = `ジャックポット！ ${jackpot}コイン獲得！`;
+                    coins += jackpot;
+                    jackpot = 100; // ジャックポットをリセット
+                    totalWin += jackpot;
+                } else {
+                    totalWin += payouts[symbol];
+                    wonLines++;
+                }
+            }
+        }
+
+        if (totalWin > 0) {
+            if (!resultDisplay.textContent.includes('ジャックポット')) {
+                resultDisplay.textContent = `${wonLines}ライン当たり！ ${totalWin}コイン獲得！`;
+            }
+            coins += totalWin;
+        } else {
+            resultDisplay.textContent = "ざんねん...";
+        }
+
+        updateDisplays();
+        if (coins <= 0) {
+            resultDisplay.textContent = "ゲームオーバー";
+            spinButton.disabled = true;
+        }
+    }
+    
+    // 指定した行と列のセルを取得するヘルパー関数
+    function getCell(row, col) {
+        return document.querySelector(`.cell[data-row='${row}'][data-col='${col}']`);
+    }
+
+    // ゲーム開始
+    init();
 </script>
 
 </body>
