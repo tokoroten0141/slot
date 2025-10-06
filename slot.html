@@ -1,1 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スロットゲーム</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'Arial', sans-serif;
+        }
 
+        #slot-machine {
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        #reels {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            border: 5px solid #333;
+            background-color: #f8f8f8;
+            padding: 10px;
+        }
+
+        .reel {
+            width: 80px;
+            height: 100px;
+            margin: 0 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            overflow: hidden;
+        }
+        
+        #spinButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #e63946;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #spinButton:hover {
+            background-color: #d62828;
+        }
+        
+        #spinButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            height: 30px; /* メッセージの表示/非表示でレイアウトが崩れないように高さを確保 */
+            color: #f77f00;
+        }
+    </style>
+</head>
+<body>
+
+<div id="slot-machine">
+    <h1>スロットゲーム</h1>
+    <div id="reels">
+        <div class="reel">🍒</div>
+        <div class="reel">🍋</div>
+        <div class="reel">🍉</div>
+    </div>
+    <button id="spinButton">スピン！</button>
+    <p id="result"></p>
+</div>
+
+<script>
+    // 定数と変数の設定
+    const reels = document.querySelectorAll('.reel');
+    const spinButton = document.getElementById('spinButton');
+    const resultDisplay = document.getElementById('result');
+
+    // スロットの絵柄
+    const symbols = ['🍒', '🍋', '🍉', '🔔', '★', '７'];
+
+    let isSpinning = false;
+
+    // スピンボタンがクリックされたときの処理
+    spinButton.addEventListener('click', () => {
+        if (isSpinning) return;
+
+        isSpinning = true;
+        spinButton.disabled = true; // ボタンを無効化
+        resultDisplay.textContent = ''; // 結果をクリア
+
+        // 各リールを個別に回転・停止させる
+        reels.forEach((reel, i) => {
+            const delay = i * 500; // 0秒後、0.5秒後、1秒後に停止
+            setTimeout(() => {
+                spinReel(reel);
+            }, delay);
+        });
+        
+        // 全てのリールが停止した後に結果を判定
+        setTimeout(() => {
+            checkResult();
+            isSpinning = false;
+            spinButton.disabled = false; // ボタンを再度有効化
+        }, 1500); // 全体のスピン時間
+    });
+
+    // リールを回転させる関数
+    function spinReel(reel) {
+        const interval = setInterval(() => {
+            // ランダムに絵柄を選んで表示
+            reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        }, 100); // 0.1秒ごとに絵柄を切り替える
+
+        // 1秒後に回転を止めて最終的な絵柄を確定
+        setTimeout(() => {
+            clearInterval(interval);
+            reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        }, 1000); // このリールのスピン時間
+    }
+    
+    // 結果を判定する関数
+    function checkResult() {
+        const r1 = reels[0].textContent;
+        const r2 = reels[1].textContent;
+        const r3 = reels[2].textContent;
+
+        if (r1 === r2 && r2 === r3) {
+            if(r1 === '７'){
+                resultDisplay.textContent = 'ジャックポット！';
+            } else {
+                resultDisplay.textContent = '当たり！';
+            }
+        } else {
+            resultDisplay.textContent = 'ざんねん...';
+        }
+    }
+</script>
+
+</body>
+</html>
