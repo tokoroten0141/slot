@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フィーバータイムスロット</title>
+    <style>
+        /* ... 以前のCSSは省略 ... */
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; background-color: #1a1a1a; color: #fff; font-family: 'Arial', sans-serif; transition: background-color 0.5s; }
+        #game-container { background-color: #2c2c2c; border-radius: 20px; padding: 20px 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.3); border: 2px solid #ffd700; text-align: center; width: 90%; max-width: 450px; transition: all 0.5s; }
+        h1 { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
+        #info-panel { display: flex; justify-content: space-around; background: #111; padding: 10px; border-radius: 10px; margin-bottom: 20px; font-size: 1.2em; }
+        .info-box span { display: block; font-size: 0.7em; color: #aaa; }
+        #slot-machine { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background-color: #000; border: 5px solid #888; padding: 10px; margin-bottom: 20px; }
+        .cell { width: 100%; aspect-ratio: 1 / 1; border: 2px solid #444; border-radius: 10px; font-size: clamp(24px, 10vw, 50px); display: flex; justify-content: center; align-items: center; background-color: #fff; color: #000; }
+        #controls { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        #stop-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn { padding: 15px 10px; font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        #spinButton { background-color: #e63946; }
+        .stop-btn { background-color: #457b9d; }
+        .btn:disabled { background-color: #666; cursor: not-allowed; color: #aaa; }
+        #result { margin-top: 15px; font-size: 20px; font-weight: bold; height: 50px; color: #f77f00; }
+        #double-up-panel { margin-top: 15px; padding: 15px; background-color: #111; border-radius: 10px; }
+        #double-up-buttons { display: flex; justify-content: center; gap: 15px; }
+        .double-up-btn { background-color: #0077b6; }
+        
+        /* ★★★ ベットボタンとフィーバータイム用のCSSを追加 ★★★ */
+        #bet-controls { margin-bottom: 15px; }
+        #betButton { background-color: #5a189a; }
+        #fever-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff00e1;
+            text-shadow: 0 0 10px #ff00e1;
+            height: 30px;
+        }
+        /* フィーバータイム中のスタイル */
+        .fever-mode {
+            background-color: #240046;
+            border-color: #ff00e1;
+            box-shadow: 0 0 40px rgba(255, 0, 225, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>FEVER RUSH SLOT</h1>
+    <div id="info-panel">
+        <div class="info-box"><span id="coin-count">10</span><span>コイン</span></div>
+        <div class="info-box"><span id="jackpot-amount">100</span><span>ジャックポット</span></div>
+    </div>
+
+    <div id="fever-display"></div>
+
+    <div id="slot-machine">
+        <div class="cell" data-row="0" data-col="0"></div><div class="cell" data-row="0" data-col="1"></div><div class="cell" data-row="0" data-col="2"></div>
+        <div class="cell" data-row="1" data-col="0"></div><div class="cell" data-row="1" data-col="1"></div><div class="cell" data-row="1" data-col="2">７</div>
+        <div class="cell" data-row="2" data-col="0"></div><div class="cell" data-row="2" data-col="1"></div><div class="cell" data-row="2" data-col="2"></div>
+    </div>
+    <div id="controls">
+        <div id="bet-controls">
+            <button id="betButton" class="btn">ベット: 1</button>
+        </div>
+        <button id="spinButton" class="btn">スピン</button>
+        <div id="stop-buttons">
+            <button class="btn stop-btn" data-col="0" disabled>ストップ</button>
+            <button class="btn stop-btn" data-col="1" disabled>ストップ</button>
+            <button class="btn stop-btn" data-col="2" disabled>ストップ</button>
+        </div>
+    </div>
+    <p id="result"></p>
+    <div id="double-up-panel" hidden></div>
+</div>
+
+<script>
+    // --- DOM要素の取得 (追加あり) ---
+    const gameContainer = document.getElementById('game-container'); // ★★★
+    const cells = document.querySelectorAll('.cell');
+    const spinButton = document.getElementById('spinButton');
+    const stopButtons = document.querySelectorAll('.stop-btn');
+    const coinDisplay = document.getElementById('coin-count');
+    const jackpotDisplay = document.getElementById('jackpot-amount');
+    const resultDisplay = document.getElementById('result');
+    const doubleUpPanel = document.getElementById('double-up-panel');
+    const betButton = document.getElementById('betButton'); // ★★★
+    const feverDisplay = document.getElementById('fever-display'); // ★★★
+
+    // --- ゲーム設定 (追加あり) ---
+    const symbols = ['🍒', '🍋', '🍉', '🔔', '🌟', '７'];
+    const payouts = { '🍒': 5, '🍋': 10, '🍉': 15, '🔔': 20, '🌟': 100, '７': 777 };
+    const betAmounts = [1, 2, 5, 10]; // ★★★ ベット枚数の選択肢
+
+    // --- ゲームの状態変数 (追加あり) ---
+    let coins = 10;
+    let jackpot = 100;
+    let isSpinning = [false, false, false];
+    let spinningIntervals = [null, null, null];
+    let pendingWinnings = 0;
+    let currentBetIndex = 0; // ★★★
+    let currentBet = betAmounts[currentBetIndex]; // ★★★
+    let isFeverTime = false; // ★★★
+    let feverSpinsLeft = 0; // ★★★
+
+    // --- 初期化 ---
+    function init() {
+        updateDisplays();
+        updateBetButtonText();
+    }
+
+    // --- 表示更新 ---
+    function updateDisplays() { /* 変更なし */ }
+    function updateBetButtonText() { // ★★★
+        currentBet = betAmounts[currentBetIndex];
+        betButton.textContent = `ベット: ${currentBet}`;
+        spinButton.textContent = isFeverTime ? `無料スピン残り: ${feverSpinsLeft}` : `スピン (消費: ${currentBet})`;
+    }
+
+    // ★★★ ベットボタンの処理 ★★★
+    betButton.addEventListener('click', () => {
+        if (isSpinning.some(s => s) || !spinButton.disabled) return; // スピン中やダブルアップ中は変更不可
+        currentBetIndex = (currentBetIndex + 1) % betAmounts.length;
+        updateBetButtonText();
+    });
+
+    // --- スピンボタンの処理 (修正あり) ★★★
+    spinButton.addEventListener('click', () => {
+        if (isSpinning.some(s => s)) return;
+        
+        if (isFeverTime) {
+            feverSpinsLeft--;
+            if (feverSpinsLeft <= 0) {
+                endFeverTime();
+            }
+        } else {
+            if (coins < currentBet) {
+                resultDisplay.textContent = "コインが足りません！";
+                return;
+            }
+            coins -= currentBet;
+            jackpot += currentBet; // ベット枚数分ジャックポットに加算
+        }
+        
+        updateDisplays();
+        updateBetButtonText();
+        resultDisplay.textContent = "";
+
+        spinButton.disabled = true;
+        betButton.disabled = true; // スピン中はベット変更不可
+        stopButtons.forEach(btn => btn.disabled = false);
+        isSpinning = [true, true, true];
+        for (let i = 0; i < 3; i++) { startSpinning(i); }
+    });
+
+    stopButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const col = parseInt(button.dataset.col);
+            if (isSpinning[col]) {
+                stopSpinning(col);
+                button.disabled = true;
+            }
+            if (isSpinning.every(s => !s)) {
+                // スピンボタンの有効化は当たり判定後に行う
+                setTimeout(checkWin, 500);
+            }
+        });
+    });
+
+    // --- 当たり判定 (checkWin) を修正 ★★★
+    function checkWin() {
+        // ... gridとpaylinesの定義は変更なし ...
+        const grid = [ [getCell(0, 0).textContent, getCell(0, 1).textContent, getCell(0, 2).textContent],[getCell(1, 0).textContent, getCell(1, 1).textContent, getCell(1, 2).textContent],[getCell(2, 0).textContent, getCell(2, 1).textContent, getCell(2, 2).textContent] ];
+        const paylines = [ [grid[0][0], grid[0][1], grid[0][2]], [grid[1][0], grid[1][1], grid[1][2]], [grid[2][0], grid[2][1], grid[2][2]], [grid[0][0], grid[1][0], grid[2][0]], [grid[0][1], grid[1][1], grid[2][1]], [grid[0][2], grid[1][2], grid[2][2]], [grid[0][0], grid[1][1], grid[2][2]], [grid[0][2], grid[1][1], grid[2][0]] ];
+
+        let totalWin = 0;
+        let isJackpot = false;
+
+        for (const line of paylines) {
+            if (line[0] === line[1] && line[1] === line[2]) {
+                const symbol = line[0];
+                if (symbol === '🌟') {
+                    totalWin += jackpot;
+                    isJackpot = true;
+                } else {
+                    totalWin += payouts[symbol] * currentBet; // ★★★ ベット枚数で配当が倍に！
+                }
+            }
+        }
+
+        if (totalWin > 0) {
+            // ... ダブルアップへの移行処理などは変更なし ...
+        } else {
+            resultDisplay.textContent = "ざんねん...";
+            // ★★★ 当たりがなくてもフィーバー判定とゲームオーバー判定は行う
+            if (!isFeverTime) {
+                checkForFeverTime();
+            }
+            checkGameOver();
+            spinButton.disabled = false;
+            betButton.disabled = false;
+        }
+    }
+
+    // ★★★ ここからフィーバータイム機能の関数 ★★★
+    function checkForFeverTime() {
+        const symbolsOnGrid = new Set();
+        cells.forEach(cell => {
+            symbolsOnGrid.add(cell.textContent);
+        });
+
+        // 全6種類の絵柄が揃ったらフィーバータイム突入
+        if (symbolsOnGrid.size === symbols.length) {
+            startFeverTime();
+            return true; // フィーバーに突入したことを伝える
+        }
+        return false;
+    }
+
+    function startFeverTime() {
+        isFeverTime = true;
+        feverSpinsLeft = 10;
+        feverDisplay.textContent = "FEVER TIME!";
+        gameContainer.classList.add('fever-mode');
+        updateBetButtonText();
+    }
+
+    function endFeverTime() {
+        isFeverTime = false;
+        feverDisplay.textContent = "";
+        gameContainer.classList.remove('fever-mode');
+        resultDisplay.textContent = "フィーバータイム終了！";
+        updateBetButtonText();
+    }
+
+    // --- その他、変更のない関数は省略 ---
+    function getCell(row, col) { return document.querySelector(`.cell[data-row='${row}'][data-col='${col}']`); }
+    function checkGameOver() { /* 変更なし */ }
+    function startSpinning(col) { /* 変更なし */ }
+    function stopSpinning(col) { /* 変更なし */ }
+    // ダブルアップ関連の関数も変更なし
+    
+    // ゲーム開始
+    init();
+</script>
+
+</body>
+</html>
